@@ -56,6 +56,7 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
+            cd build
             az storage blob upload-batch --account-name raymondsaga --auth-mode key -d '$web' -s .
       
       - name: Logout to Azure
