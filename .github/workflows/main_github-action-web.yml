@@ -1,7 +1,4 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: Build and deploy Node.js app to Azure Web App - github-action-web
+name: Build and deploy Node.js app to Azure Blob Storage - github-action-web
 
 on:
   push:
@@ -28,7 +25,7 @@ jobs:
           npm run test --if-present
 
       - name: Zip artifact for deployment
-        run: zip release.zip .* -r
+        run: zip release.zip ./build/* -r
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
@@ -41,10 +38,6 @@ jobs:
     needs: build
     environment:
       name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    permissions:
-      id-token: write #This is required for requesting the JWT
-
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v3
@@ -53,19 +46,19 @@ jobs:
 
       - name: Unzip artifact for deployment
         run: unzip release.zip
-      
+
       - name: Login to Azure
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_5E48B55A3BB1452684FB5D459B11100B }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_20EC6C7314ED40AAAB345A1D3947AAEB }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F3FF3FB80E6B4EE1AD9B35613455E73F }}
-
-      - name: 'Deploy to Azure Web App'
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v2
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Upload to Blob Storage
+        uses: azure/CLI@v1
         with:
-          app-name: 'github-action-web'
-          slot-name: 'Production'
-          package: .
-          
+          inlineScript: |
+            az storage blob upload-batch --account-name raymondsaga --auth-mode key -d '$web' -s .
+      
+      - name: Logout to Azure
+        run: |
+            az logout
+        if: always()
